@@ -11,6 +11,7 @@ gem "dalli"
 gem "redis"
 gem "faraday"
 gem "pry"
+gem "dotenv"
 
 group :development, :test do
   gem "byebug"

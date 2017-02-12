@@ -1,3 +1,6 @@
+require 'dotenv'
+Dotenv.load
+
 require 'rubygems'
 require 'bundler/setup'
 require 'thor'
@@ -20,7 +23,7 @@ module Reports
     def user_info(username)
       puts "Getting info for #{username}..."
 
-      user = GitHubAPIClient.new.get_user username
+      user = client.get_user username
 
       puts "name: #{user.name}"
       puts "location: #{user.location}"
@@ -33,7 +36,7 @@ module Reports
     private
 
     def client
-      @client ||= GitHubAPIClient.new
+      @client ||= GitHubAPIClient.new(ENV['GITHUB_TOKEN'])
     end
 
   end
