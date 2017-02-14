@@ -19,6 +19,23 @@ module Reports
       IRB.start
     end
 
+    desc 'repositories USERNAME', 'List user\'s public repositories'
+    def repositories(username)
+      puts "Fetching repository statistics for #{username}..."
+
+      user_repos = client.public_repos_for_user username
+
+      puts "#{username} has #{user_repos.count} public repos."
+      puts ' '
+
+      user_repos.each do |repo|
+        puts "#{repo.full_name} - #{repo.svn_url}"
+      end
+    rescue Error => e
+      puts "ERROR #{e.message}"
+      exit 1
+    end
+
     desc 'user_info USERNAME', 'Get information for a user'
     def user_info(username)
       puts "Getting info for #{username}..."
