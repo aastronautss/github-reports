@@ -53,7 +53,7 @@ module Reports
     private
 
     def client
-      @client ||= GitHubAPIClient.new(ENV['GITHUB_TOKEN'])
+      @client ||= GitHubAPIClient.new
     end
 
   end

@@ -3,8 +3,8 @@ require 'logger'
 module Reports
   module Middleware
     class Logging < Faraday::Middleware
-      def initialize(app, options={})
-        super(app)
+      def initialize(app, options = {})
+        super app
         @logger = Logger.new STDOUT
         @logger.formatter = proc do |severity, datetime, program, message|
           message + "\n"

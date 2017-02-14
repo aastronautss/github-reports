@@ -2,6 +2,7 @@ require 'faraday'
 require 'json'
 require 'logger'
 require_relative 'middleware/logging'
+require_relative 'middleware/authentication'
 
 module Reports
 
@@ -15,8 +16,19 @@ module Reports
   Repository = Struct.new :full_name, :svn_url
 
   class GitHubAPIClient
-    def initialize(access_token)
-      @access_token = access_token
+    def get_user(username)
+      response = get "https://api.github.com/users/#{username}"
+
+      if !VALID_STATUS_CODES.include? response.status
+        request RequestFailure, JSON.parse(response.body)['message']
+      end
+
+      if response.status == 404
+        raise NonexistentUser, "'#{username}' does not exist"
+      end
+
+      data = JSON.parse response.body
+      User.new data['name'], data['location'], data['public_repos']
     end
 
     def public_repos_for_user(username)
@@ -25,10 +37,6 @@ module Reports
 
       if !VALID_STATUS_CODES.include? response.status
         request RequestFailure, JSON.parse(response.body)['message']
-      end
-
-      if response.status == 401
-        raise AuthenticationFailure, 'Authentication Failed. Please set the "GITHUB_TOKEN" environment variable to a valid token.'
       end
 
       if response.status == 404
@@ -41,29 +49,11 @@ module Reports
       end
     end
 
-    def get_user(username)
-      response = get "https://api.github.com/users/#{username}"
-
-      if !VALID_STATUS_CODES.include? response.status
-        request RequestFailure, JSON.parse(response.body)['message']
-      end
-
-      if response.status == 401
-        raise AuthenticationFailure, 'Authentication Failed. Please set the "GITHUB_TOKEN" environment variable to a valid token.'
-      end
-
-      if response.status == 404
-        raise NonexistentUser, "'#{username}' does not exist"
-      end
-
-      data = JSON.parse response.body
-      User.new data['name'], data['location'], data['public_repos']
-    end
-
     private
 
     def connection
       @connection ||= Faraday::Connection.new do |c|
+        c.use Middleware::Authentication
         c.use Middleware::Logging
 
         c.adapter Faraday.default_adapter
@@ -71,7 +61,6 @@ module Reports
     end
 
     def get(url)
-      headers = { 'Authorization' => "token #{@access_token}" }
       connection.get url, nil, headers
     end
   end
