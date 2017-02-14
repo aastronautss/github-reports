@@ -1,10 +1,14 @@
 require 'faraday'
 require 'json'
 require 'logger'
+
 require_relative 'middleware/logging'
 require_relative 'middleware/authentication'
 require_relative 'middleware/status_check'
 require_relative 'middleware/json_parser'
+require_relative 'middleware/cache'
+
+require_relative 'storage/memory'
 
 module Reports
 
@@ -46,6 +50,7 @@ module Reports
       @connection ||= Faraday::Connection.new do |c|
         c.use Middleware::Authentication
         c.use Middleware::StatusCheck
+        c.use Middleware::Cache, Storage::Memory.new
         c.use Middleware::Logging
         c.use Middleware::JSONParser
 
