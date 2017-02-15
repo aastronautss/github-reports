@@ -1,7 +1,7 @@
 require "faraday"
 require "time"
 require "reports/middleware/cache"
-require "reports/storage/memory"
+require "reports/storage/redis"
 
 module Reports::Middleware
   RSpec.describe Cache do
@@ -9,7 +9,7 @@ module Reports::Middleware
 
     let(:conn) do
       Faraday.new do |builder|
-        builder.use Cache, ::Reports::Storage::Memory.new
+        builder.use Cache, storage
         builder.adapter :test, stubs
       end
     end
@@ -18,6 +18,10 @@ module Reports::Middleware
       headers = {"Cache-Control" => "max-age=300", "Date" => Time.new.httpdate}
       [200, headers, "hello"]
     end
+
+    let(:storage) { Reports::Storage::Redis.new }
+
+    after { storage.flush }
 
     it "returns a previously cached response" do
       stubs.get("http://example.test") { [200, { 'Cache-Control' => 'public max-age=60', 'Date' => Time.now.httpdate }, "hello"] }

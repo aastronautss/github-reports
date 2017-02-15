@@ -8,7 +8,7 @@ require_relative 'middleware/status_check'
 require_relative 'middleware/json_parser'
 require_relative 'middleware/cache'
 
-require_relative 'storage/memory'
+require_relative 'storage/redis'
 
 module Reports
 
@@ -16,6 +16,7 @@ module Reports
   class NonexistentUser < Error; end
   class RequestFailure < Error; end
   class AuthenticationFailure < Error; end
+  class ConfigurationError < Error; end
 
   User = Struct.new :name, :location, :public_repos
   Repository = Struct.new :full_name, :svn_url
@@ -50,7 +51,7 @@ module Reports
       @connection ||= Faraday::Connection.new do |c|
         c.use Middleware::Authentication
         c.use Middleware::StatusCheck
-        c.use Middleware::Cache, Storage::Memory.new
+        c.use Middleware::Cache, Storage::Redis.new
         c.use Middleware::Logging
         c.use Middleware::JSONParser
 

@@ -6,11 +6,11 @@ module Reports
       end
 
       def read(key)
-        @hash[key]
+        Marshal.load(@hash[key]) if @hash[key]
       end
 
       def write(key, value)
-        @hash[key] = value
+        @hash[key] = Marshal.dump(value)
       end
     end
   end

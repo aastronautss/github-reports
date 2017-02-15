@@ -38,6 +38,8 @@ module Reports
         response
       end
 
+      private
+
       def cachable_response?(env)
         env.method == :get && env.response_headers['Cache-Control'] && !env.response_headers['Cache-Control'].include?('no-store')
       end
