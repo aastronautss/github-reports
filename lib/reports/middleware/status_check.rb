@@ -1,7 +1,7 @@
 module Reports
   module Middleware
     class StatusCheck < Faraday::Middleware
-      VALID_STATUS_CODES = [200, 201, 302, 401, 403, 404, 422]
+      VALID_STATUS_CODES = [200, 201, 204, 302, 401, 403, 404, 422]
 
       def initialize(app, options = {})
         super app

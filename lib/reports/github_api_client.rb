@@ -76,6 +76,24 @@ module Reports
       end
     end
 
+    def repo_starred?(full_repo_name)
+      url = "https://api.github.com/user/starred/#{full_repo_name}"
+      res = get url
+      res.status == 204
+    end
+
+    def star_repo(full_repo_name)
+      url = "https://api.github.com/user/starred/#{full_repo_name}"
+      res = put url
+      raise RequestFailure, res.body['message'] unless res.status == 204
+    end
+
+    def unstar_repo(full_repo_name)
+      url = "https://api.github.com/user/starred/#{full_repo_name}"
+      res = delete url
+      raise RequestFailure, res.body['message'] unless res.status == 204
+    end
+
     private
 
     def connection
@@ -94,8 +112,16 @@ module Reports
       connection.get url
     end
 
-    def post(url, body)
+    def post(url, body = '')
       connection.post url, body
+    end
+
+    def put(url, body = '')
+      connection.put url, body
+    end
+
+    def delete(url)
+      connection.delete url
     end
 
     def get_pages(url, collection = [])
