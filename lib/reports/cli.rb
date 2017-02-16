@@ -34,17 +34,29 @@ module Reports
     end
 
     desc 'repositories USERNAME', 'List user\'s public repositories'
+    option :forks, type: :boolean, desc: "Include forks in stats", default: false
     def repositories(username)
       puts "Fetching repository statistics for #{username}..."
 
-      user_repos = client.public_repos_for_user username
+      user_repos = client.public_repos_for_user username, forks: options[:forks]
 
-      puts "#{username} has #{user_repos.count} public repos."
-      puts ' '
+      table_printer = TablePrinter.new(STDOUT)
 
       user_repos.each do |repo|
-        puts "#{repo.full_name} - #{repo.svn_url}"
+        table_printer.print(repo.languages, title: repo.full_name, humanize: true)
+        puts # blank line
       end
+
+      stats = Hash.new(0)
+      user_repos.each do |repo|
+        repo.languages.each_pair do |language, bytes|
+          stats[language] += bytes
+        end
+      end
+
+      table_printer.print(stats, title: "Language Summary", humanize: true, total: true)
+
+      puts "\n#{username} has #{user_repos.count} public repos."
     rescue Error => e
       puts "ERROR #{e.message}"
       exit 1

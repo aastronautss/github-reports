@@ -19,7 +19,7 @@ module Reports
   class ConfigurationError < Error; end
 
   User = Struct.new :name, :location, :public_repos
-  Repository = Struct.new :full_name, :svn_url
+  Repository = Struct.new :full_name, :svn_url, :languages
   Event = Struct.new :type, :repo_name
 
   class GitHubAPIClient
@@ -34,16 +34,17 @@ module Reports
       User.new data['name'], data['location'], data['public_repos']
     end
 
-    def public_repos_for_user(username)
-      response = get "https://api.github.com/users/#{username}/repos"
+    def public_repos_for_user(username, forks: false)
+      data = get_pages "https://api.github.com/users/#{username}/repos"
 
-      if response.status == 404
-        raise NonexistentUser, "'#{username}' does not exist"
-      end
+      data.map do |repo_data|
+        next if !forks && repo_data["fork"]
 
-      response.body.map do |repo_data|
-        Repository.new repo_data['full_name'], repo_data['svn_url']
-      end
+        full_name = repo_data['full_name']
+        language_url = "https://api.github.com/repos/#{full_name}/languages"
+        language_res = get language_url
+        Repository.new full_name, repo_data['svn_url'], language_res.body
+      end.compact
     end
 
     def public_activity_for_user(username)
@@ -88,7 +89,7 @@ module Reports
     def get_next_url(response)
       link_header = response.headers['link']
       if link_header
-        match_data = link_header.match /<(.*page=\d+)>; rel="next"/
+        match_data = link_header.match /<(.*)>; rel="next"/
         return match_data[1] if match_data
       end
 
