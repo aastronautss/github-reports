@@ -72,22 +72,27 @@ module Reports
       connection.get url
     end
 
-    def get_pages(url, collection = [], current_page = 1)
-      res = get "#{url}?page=#{current_page}"
+    def get_pages(url, collection = [])
+      res = get url
       raise NonexistentUser, "'#{username}' does not exist" unless res.status == 200
 
-      last_page = current_page
-      link_header = res.headers['link']
+      next_url = get_next_url res
+
+      if next_url
+        get_pages next_url, collection + res.body
+      else
+        collection + res.body
+      end
+    end
+
+    def get_next_url(response)
+      link_header = response.headers['link']
       if link_header
-        match_data = link_header.match(/<.*page=(\d+)>; rel="last"/)
-        last_page = match_data[1].to_i if match_data
+        match_data = link_header.match /<(.*page=\d+)>; rel="next"/
+        return match_data[1] if match_data
       end
 
-      if current_page >= last_page
-        collection + res.body
-      else
-        get_pages url, collection + res.body, current_page + 1
-      end
+      nil
     end
   end
 
