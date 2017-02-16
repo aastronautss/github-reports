@@ -17,6 +17,7 @@ module Reports
   class RequestFailure < Error; end
   class AuthenticationFailure < Error; end
   class ConfigurationError < Error; end
+  class ContentCreationError < Error; end
 
   User = Struct.new :name, :location, :public_repos
   Repository = Struct.new :full_name, :svn_url, :languages
@@ -55,15 +56,35 @@ module Reports
       end
     end
 
+    def create_private_gist(description, filename, contents)
+      data = JSON.dump({
+        'description' => description,
+        'public' => false,
+        'files' => {
+          filename => {
+            'content' => contents
+          }
+        }
+      })
+
+      res = post 'https://api.github.com/gists', data
+
+      if res.status == 201
+        res.body['html_url']
+      else
+        raise ContentCreationError, res.body['message']
+      end
+    end
+
     private
 
     def connection
       @connection ||= Faraday::Connection.new do |c|
-        c.use Middleware::Authentication
-        c.use Middleware::StatusCheck
-        c.use Middleware::Cache, Storage::Redis.new
-        c.use Middleware::Logging
         c.use Middleware::JSONParser
+        c.use Middleware::StatusCheck
+        c.use Middleware::Authentication
+        c.use Middleware::Logging
+        c.use Middleware::Cache, Storage::Redis.new
 
         c.adapter Faraday.default_adapter
       end
@@ -71,6 +92,10 @@ module Reports
 
     def get(url)
       connection.get url
+    end
+
+    def post(url, body)
+      connection.post url, body
     end
 
     def get_pages(url, collection = [])

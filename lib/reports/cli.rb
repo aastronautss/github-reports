@@ -75,6 +75,19 @@ module Reports
       exit 1
     end
 
+    desc "gist DESCRIPTION FILENAME CONTENTS", "Create a private Gist on GitHub"
+    def gist(description, filename, contents)
+      puts "Creating a private Gist..."
+
+      client = GitHubAPIClient.new
+      gist_url = client.create_private_gist description, filename, contents
+
+      puts "Your Gist is available at #{gist_url}."
+    rescue Error => error
+      puts "ERROR #{error.message}"
+      exit 1
+    end
+
     private
 
     def client
