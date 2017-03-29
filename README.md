@@ -1,6 +1,6 @@
 # GitHub Reports
 
-A skeleton application for building custom reports with the GitHub API.
+A custom GitHub API library built to obtain user reports from GitHub, using Faraday and custom middleware. Includes a command line interface.
 
 ## Requirements
 
